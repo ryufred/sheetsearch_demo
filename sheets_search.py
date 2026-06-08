@@ -12,6 +12,103 @@ st.set_page_config(
     layout="wide",
 )
 
+# ── 로그인 설정 ───────────────────────────────────────────────
+# secrets.toml에 계정 정보가 있으면 사용, 없으면 기본값 사용
+def get_credentials():
+    try:
+        return st.secrets["credentials"]
+    except Exception:
+        # secrets.toml 없을 때 기본 계정 (로컬 테스트용)
+        return {"admin": "1234"}
+
+def check_login(username, password):
+    creds = get_credentials()
+    return creds.get(username) == password
+
+def login_page():
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap');
+    html, body, [class*="css"] { background-color: #0d0d0d !important; color: #f0f0f0 !important; }
+    .login-wrap {
+        max-width: 400px;
+        margin: 8rem auto 0;
+        background: #161616;
+        border: 1px solid #2a2a2a;
+        border-radius: 20px;
+        padding: 3rem 2.5rem;
+        box-shadow: 0 0 60px rgba(0,229,160,0.06);
+    }
+    .login-title {
+        font-family: 'Space Mono', monospace;
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #00e5a0, #0099ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+        margin-bottom: 0.3rem;
+    }
+    .login-sub {
+        text-align: center;
+        color: #888;
+        font-size: 0.85rem;
+        margin-bottom: 2rem;
+        font-family: 'Noto Sans KR', sans-serif;
+    }
+    .stTextInput > div > div > input {
+        background: #1e1e1e !important;
+        border: 1px solid #2a2a2a !important;
+        border-radius: 10px !important;
+        color: #f0f0f0 !important;
+        font-size: 1rem !important;
+    }
+    .stTextInput > div > div > input:focus {
+        border-color: #00e5a0 !important;
+        box-shadow: 0 0 0 2px rgba(0,229,160,0.15) !important;
+    }
+    .stButton > button {
+        background: linear-gradient(135deg, #00e5a0, #00c478) !important;
+        color: #000 !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        width: 100% !important;
+        padding: 0.6rem !important;
+        font-size: 1rem !important;
+        font-family: 'Noto Sans KR', sans-serif !important;
+    }
+    </style>
+    <div class="login-wrap">
+        <div class="login-title">🔍 SHEET SEARCH</div>
+        <div class="login-sub">로그인 후 이용할 수 있어요</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 중앙 정렬을 위한 컬럼 트릭
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
+        username = st.text_input("아이디", placeholder="아이디 입력", key="login_user")
+        password = st.text_input("비밀번호", placeholder="비밀번호 입력", type="password", key="login_pw")
+        login_btn = st.button("로그인", use_container_width=True)
+
+        if login_btn:
+            if check_login(username, password):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.rerun()
+            else:
+                st.error("아이디 또는 비밀번호가 틀렸어요.")
+
+# ── 로그인 상태 확인 ─────────────────────────────────────────
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    login_page()
+    st.stop()  # 로그인 안 되면 아래 코드 실행 안 됨
+
+
 # ── CSS ──────────────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -239,12 +336,22 @@ def validate_url(url):
            url.startswith("https://docs.google.com/")
 
 # ── 헤더 ────────────────────────────────────────────────────
-st.markdown("""
-<div class="hero">
-    <h1>🔍 SHEET SEARCH</h1>
-    <p>구글 스프레드시트를 저장하고 검색하세요</p>
-</div>
-""", unsafe_allow_html=True)
+header_col, logout_col = st.columns([5, 1])
+with header_col:
+    st.markdown("""
+    <div class="hero">
+        <h1>🔍 SHEET SEARCH</h1>
+        <p>구글 스프레드시트를 저장하고 검색하세요</p>
+    </div>
+    """, unsafe_allow_html=True)
+with logout_col:
+    st.write("")
+    st.write("")
+    st.markdown(f'<div style="color:#888;font-size:0.85rem;text-align:right;margin-bottom:0.3rem">👤 {st.session_state.username}</div>', unsafe_allow_html=True)
+    if st.button("로그아웃", use_container_width=True):
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.rerun()
 
 # ── 레이아웃 ─────────────────────────────────────────────────
 col_left, col_right = st.columns([1, 1.6], gap="large")
