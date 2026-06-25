@@ -312,9 +312,9 @@ col_left, col_right = st.columns([1, 1.6], gap="large")
 # ══ 왼쪽: 등록 ══════════════════════════════════════════════
 with col_left:
     st.markdown('<div class="section-title">📋 시트 등록</div>', unsafe_allow_html=True)
-    new_name     = st.text_input("시트 이름", placeholder="예) 2024 마케팅 예산")
+    new_name     = st.text_input("시트 이름", placeholder="예) 2026 마케팅 예산")
     new_url      = st.text_input("구글 시트 URL", placeholder="https://docs.google.com/spreadsheets/d/...")
-    new_tags_raw = st.text_input("태그 (쉼표 구분)", placeholder="예) 마케팅, 예산, 2024")
+    new_tags_raw = st.text_input("태그 (쉼표 구분)", placeholder="예) 마케팅, 예산, 2026")
     new_desc     = st.text_input("간단한 설명 (선택)", placeholder="예) Q1~Q4 마케팅 비용 정리")
 
     c1, c2 = st.columns(2)
@@ -340,7 +340,14 @@ with col_left:
         st.markdown('<div class="section-title" style="margin-top:2rem">📂 등록된 시트 목록</div>', unsafe_allow_html=True)
         st.markdown(f'<span class="badge">총 {len(sheets_data)}개</span>', unsafe_allow_html=True)
         st.write("")
-        paged_list = paginate(sheets_data, "list_page")
+        list_search = st.text_input("목록 검색", placeholder="시트 이름으로 검색...", key="list_search", label_visibility="collapsed")
+        filtered_list = [s for s in sheets_data if list_search.strip().lower() in s["name"].lower()] if list_search.strip() else sheets_data
+        # 검색어 바뀌면 페이지 리셋
+        if st.session_state.get("prev_list_search", "") != list_search:
+            st.session_state["list_page"] = 1
+            st.session_state["prev_list_search"] = list_search
+        st.write("")
+        paged_list = paginate(filtered_list, "list_page")
         st.write("")
         for s in paged_list:
             i = sheets_data.index(s)
