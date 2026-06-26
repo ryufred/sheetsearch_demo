@@ -1,0 +1,44 @@
+name: Streamlit Keep Alive (Selenium)
+
+on:
+  schedule:
+    - cron: '0 */3 * * *' # 3시간마다 실행
+  workflow_dispatch:
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install selenium webdriver-manager
+
+      - name: Run Python Bot
+        run: |
+          python -c "
+          from selenium import webdriver
+          from selenium.webdriver.chrome.options import Options
+          import time
+
+          options = Options()
+          options.add_argument('--headless') # 화면 없이 실행
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+
+          driver = webdriver.Chrome(options=options)
+          print('스트림릿 앱 접속 시작...')
+          driver.get('https://sheetsearchdemo-idjhuhcv6s5bkmqtwxgdxy.streamlit.app/') # 본인 앱 주소로 변경
+          
+          time.sleep(15) # 웹소켓 및 로그인 화면이 완전히 로드될 때까지 15초 대기
+          print('접속 유지 완료, 브라우저를 종료합니다.')
+          driver.quit()
+          "
